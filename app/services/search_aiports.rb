@@ -130,7 +130,11 @@ module Services
 
     def create_errors(errors)
       flatten_hash(errors).map do |key, errors|
-        "#{key} #{errors.join(', ')}"
+        if key.to_s.include?('.')
+          "#{key} #{errors.join(', ')}"
+        else
+          errors.join(', ')
+        end
       end
     end
 

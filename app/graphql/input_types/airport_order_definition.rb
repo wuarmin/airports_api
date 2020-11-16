@@ -6,6 +6,6 @@ module InputTypes
   class AirportOrderDefinition < InputTypes::BaseInputObject
     description "Parameters to order airports"
     argument :field, Types::AirportOrderField, required: false
-    argument :sort_order, Types::SortOrder, required: false
+    argument :sort_order, Types::SortOrder, required: false, default_value: :asc
   end
 end

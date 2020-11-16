@@ -29,6 +29,8 @@ module Types
       result = Services::SearchAirports.new.call(**search_airport_input[:parameters])
       if (result.success)
         result.value!
+      else
+        raise GraphQL::ExecutionError, result.failure.join(' ')
       end
     end
   end
