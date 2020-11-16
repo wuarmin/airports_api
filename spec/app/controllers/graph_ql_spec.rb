@@ -12,7 +12,7 @@ describe Controllers::GraphQL do
   }
 
   before do
-    AppSpecHelper.create_airports
+    create_spec_airports
   end
 
   it 'is successful' do

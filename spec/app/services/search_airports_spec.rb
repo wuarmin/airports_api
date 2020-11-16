@@ -3,11 +3,11 @@ require "hanami/validations"
 RSpec.describe Services::SearchAirports do
 
   before(:all) do
-    AppSpecHelper.create_airports
+    create_spec_airports
   end
 
   after(:all) do
-    AppSpecHelper.delete_airports
+    delete_spec_airports
   end
 
   describe '#call' do
@@ -125,7 +125,7 @@ RSpec.describe Services::SearchAirports do
 
         expect(result.failure?).to be(true)
         expect(result.failure).to eq([
-          "filter AirportOrderField DISTANCE_TO_GEO_POSITION is useless unless geo_position is defined"
+          "AirportOrderField DISTANCE_TO_GEO_POSITION is useless unless geo_position is defined"
         ])
       end
     end
