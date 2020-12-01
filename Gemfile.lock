@@ -85,7 +85,7 @@ GEM
     pg (1.2.3)
     puma (5.0.4)
       nio4r (~> 2.0)
-    rack (2.2.2)
+    rack (2.2.3)
     rake (13.0.1)
     rspec (3.9.0)
       rspec-core (~> 3.9.0)
