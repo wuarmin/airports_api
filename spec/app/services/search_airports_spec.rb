@@ -1,5 +1,3 @@
-require "hanami/validations"
-
 RSpec.describe Services::SearchAirports do
 
   before(:all) do
