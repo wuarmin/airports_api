@@ -1,4 +1,5 @@
 require_relative 'types/query_type'
+require_relative 'types/mutation_type'
 
 class Schema < GraphQL::Schema
   # use GraphQL::Execution::Interpreter
@@ -6,4 +7,5 @@ class Schema < GraphQL::Schema
   # use GraphQL::Analysis::AST
 
   query(Types::QueryType)
+  mutation(Types::MutationType)
 end
