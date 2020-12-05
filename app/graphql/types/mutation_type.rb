@@ -1,4 +1,5 @@
 require_relative './user_type'
+require_relative './sign_in_return_type'
 require_relative '../input_types/auth_credentials'
 
 class Types::MutationType < GraphQL::Schema::Object
@@ -6,8 +7,21 @@ class Types::MutationType < GraphQL::Schema::Object
     argument :credentials, InputTypes::AuthCredentials, required: true
   end
 
+  field :sign_in, Types::SignInReturnType, null: false do
+    argument :credentials, InputTypes::AuthCredentials, required: true
+  end
+
   def create_user(credentials)
     result = Services::CreateUser.new.call(**credentials[:credentials])
+    if (result.success?)
+      result.value!
+    else
+      raise GraphQL::ExecutionError, result.failure.join(' ')
+    end
+  end
+
+  def sign_in(credentials)
+    result = Services::SignInUser.new.call(**credentials[:credentials])
     if (result.success?)
       result.value!
     else

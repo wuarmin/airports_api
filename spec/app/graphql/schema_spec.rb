@@ -443,10 +443,300 @@ RSpec.describe Schema do
             ])
           end
         end
+      end
+    end
+
+    describe '#sign_in' do
+      let(:mutation) do
+        <<-GRAPHQL
+          mutation ($credentials: AuthCredentials!) {
+            signIn(credentials: $credentials) {
+              user {
+                id
+                email
+              }
+              token
+            }
+          }
+        GRAPHQL
+      end
+
+      context 'when params are valid' do
+        let(:email) { 'pacey.whitter@dawsonscreak.com' }
+        let(:password) { 'my password' }
+        let(:variables) { { credentials: { email: email, password: password } } }
+
+        context 'when user with given email exists' do
+          before(:each) do
+            create(:user, { email: 'pacey.whitter@dawsonscreak.com' })
+          end
+
+          context('when password matches') do
+            it 'should sign in a user' do
+              result = described_class.execute(mutation, variables: variables)
+
+              expect(result['data']['signIn']['user']['email']).to eq('pacey.whitter@dawsonscreak.com')
+              expect(result['data']['signIn']['token'].length).to be(127)
+            end
+          end
+
+          context 'when password does not match' do
+            let(:password) { 'not my password' }
+
+            it 'should fail with an error' do
+              result = described_class.execute(mutation, variables: variables)
+
+              expect(result['errors']).to eq([
+                {
+                  "message"   => "authentication failed",
+                  "locations" => [
+                    {
+                      "line"   => 2,
+                      "column" => 13
+                    }
+                  ],
+                  "path"      => [
+                    "signIn"
+                  ]
+                }
+              ])
+            end
+          end
+        end
+
+        context 'when there is no user with given email' do
+          let(:email) { 'joey.potter@dawsonscreak.com' }
+
+          it 'should fail with an error' do
+            result = described_class.execute(mutation, variables: variables)
+
+            expect(result['errors']).to eq([
+              {
+                "message"   => "no user found for given email",
+                "locations" => [
+                  {
+                    "line"   => 2,
+                    "column" => 13
+                  }
+                ],
+                "path"      => [
+                  "signIn"
+                ]
+              }
+            ])
+          end
+        end
+      end
+
+      context 'when params are invalid' do
+        context 'when params are nil' do
+          let(:variables) { nil }
+
+          it 'should fail with errors' do
+            result = described_class.execute(mutation, variables: variables)
+
+            expect(result['errors']).to eq([
+              {
+                "message"    => "Variable $credentials of type AuthCredentials! was provided invalid value",
+                "locations"  => [
+                  {
+                    "line"   => 1,
+                    "column" => 21
+                  }
+                ],
+                "extensions" => {
+                  "value"    => nil,
+                  "problems" => [
+                    {
+                      "path"        => [],
+                      "explanation" => "Expected value to not be null"
+                    }
+                  ]
+                }
+              }
+            ])
+          end
+        end
+
+        context 'when params are empty' do
+          let(:variables) { {} }
+
+          it 'should fail with errors' do
+            result = described_class.execute(mutation, variables: variables)
+
+            expect(result['errors']).to eq([
+              {
+                "message"    => "Variable $credentials of type AuthCredentials! was provided invalid value",
+                "locations"  => [
+                  {
+                    "line"   => 1,
+                    "column" => 21
+                  }
+                ],
+                "extensions" => {
+                  "value"    => nil,
+                  "problems" => [
+                    {
+                      "path"        => [],
+                      "explanation" => "Expected value to not be null"
+                    }
+                  ]
+                }
+              }
+            ])
+          end
+        end
+
+        context 'when credentials are nil' do
+          let(:variables) { { credentials: nil } }
+
+          it 'should fail with errors' do
+            result = described_class.execute(mutation, variables: variables)
+
+            expect(result['errors']).to eq([
+              {
+                "message"    => "Variable $credentials of type AuthCredentials! was provided invalid value",
+                "locations"  => [
+                  {
+                    "line"   => 1,
+                    "column" => 21
+                  }
+                ],
+                "extensions" => {
+                  "value"    => nil,
+                  "problems" => [
+                    {
+                      "path"        => [],
+                      "explanation" => "Expected value to not be null"
+                    }
+                  ]
+                }
+              }
+            ])
+          end
+        end
+
+        context 'when credentials are empty' do
+          let(:variables) { { credentials: {} } }
+
+          it 'should fail with errors' do
+            result = described_class.execute(mutation, variables: variables)
+
+            expect(result['errors']).to eq([
+              {
+                "message"    => "Variable $credentials of type AuthCredentials! was provided invalid value for email (Expected value to not be null), password (Expected value to not be null)",
+                "locations"  => [
+                  {
+                    "line"   => 1,
+                    "column" => 21
+                  }
+                ],
+                "extensions" => {
+                  "value"    => {},
+                  "problems" => [
+                    {
+                      "path"        => [
+                        "email"
+                      ],
+                      "explanation" => "Expected value to not be null"
+                    },
+                    {
+                      "path"        => [
+                        "password"
+                      ],
+                      "explanation" => "Expected value to not be null"
+                    }
+                  ]
+                }
+              }
+            ])
+          end
+        end
+
+        context 'when email is invalid' do
+          let(:variables) { { credentials: { email: 'invalid', password: 'abc123' } } }
+
+          it 'should fail with errors' do
+            result = described_class.execute(mutation, variables: variables)
+
+            expect(result['errors']).to eq([
+              {
+                "message"   => "email is invalid",
+                "locations" => [
+                  {
+                    "line"   => 2,
+                    "column" => 13
+                  }
+                ],
+                "path"      => [
+                  "signIn"
+                ]
+              }
+            ])
+          end
+        end
+
+        context 'when password is invalid' do
+          let(:variables) { { credentials: { email: 'email@test.com', password: '' } } }
+
+          it 'should fail with errors' do
+            result = described_class.execute(mutation, variables: variables)
+
+            expect(result['errors']).to eq([
+              {
+                "message"   => "password must be filled",
+                "locations" => [
+                  {
+                    "line"   => 2,
+                    "column" => 13
+                  }
+                ],
+                "path"      => [
+                  "signIn"
+                ]
+              }
+            ])
+          end
+        end
+
+        context 'when password has wrong data type' do
+          let(:variables) { { credentials: { email: 'email@test.com', password: 45454 } } }
+
+          it 'should fail with errors' do
+            result = described_class.execute(mutation, variables: variables)
+
+            expect(result['errors']).to eq([
+              {
+                "message"    => "Variable $credentials of type AuthCredentials! was provided invalid value for password (Could not coerce value 45454 to String)",
+                "locations"  => [
+                  {
+                    "line"   => 1,
+                    "column" => 21
+                  }
+                ],
+                "extensions" => {
+                  "value"    => {
+                    "email"    => "email@test.com",
+                    "password" => 45454
+                  },
+                  "problems" => [
+                    {
+                      "path"        => [
+                        "password"
+                      ],
+                      "explanation" => "Could not coerce value 45454 to String"
+                    }
+                  ]
+                }
+              }
+            ])
+          end
+        end
 
       end
 
     end
+
   end
 
 end

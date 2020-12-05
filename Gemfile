@@ -12,6 +12,7 @@ gem 'puma', '~> 5.0.4'
 gem "hanami-validations", "~> 2.0.alpha"
 gem "dry-monads", "~> 1.3.5"
 gem "bcrypt", "~> 3.1.13"
+gem 'jwt', "~> 2.0"
 
 group :test, :development do
   gem 'shotgun'
