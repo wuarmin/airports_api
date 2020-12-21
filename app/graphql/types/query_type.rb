@@ -1,9 +1,12 @@
 require_relative './airport_type'
 require_relative '../input_types/airport_search_parameters'
 require_relative './airport_connection_type'
+require_relative '../helpers/auth'
 
 module Types
   class QueryType < GraphQL::Schema::Object
+    include Helpers::Auth
+
     description 'The query root of this schema'
 
     field :airport, Types::AirportType, null: true do
@@ -22,10 +25,12 @@ module Types
     # resolvers
 
     def airport(id:)
+      authorize
       Models::Airport.find(id: id)
     end
 
     def search_airports(search_airport_input)
+      authorize
       result = Services::SearchAirports.new.call(**search_airport_input[:parameters])
       if (result.success?)
         result.value!
@@ -33,5 +38,6 @@ module Types
         raise GraphQL::ExecutionError, result.failure.join(' ')
       end
     end
+
   end
 end

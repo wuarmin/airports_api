@@ -1,8 +1,11 @@
 require_relative './user_type'
 require_relative './sign_in_return_type'
 require_relative '../input_types/auth_credentials'
+require_relative '../helpers/auth'
 
 class Types::MutationType < GraphQL::Schema::Object
+  include Helpers::Auth
+
   field :create_user, Types::UserType, null: false do
     argument :credentials, InputTypes::AuthCredentials, required: true
   end
@@ -12,6 +15,8 @@ class Types::MutationType < GraphQL::Schema::Object
   end
 
   def create_user(credentials)
+    authorize
+
     result = Services::CreateUser.new.call(**credentials[:credentials])
     if (result.success?)
       result.value!
