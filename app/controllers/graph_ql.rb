@@ -7,14 +7,14 @@ module Controllers
     def call(params)
       self.format = :json
       query = params.get(:query)
-      context = { current_user: curren_user }
+      context = { current_user: current_user }
       variables = ensure_hash(params.get(:variables))
       status 200, Schema.execute(query, variables: variables, context: context).to_json
     end
 
     private
 
-    def curren_user
+    def current_user
       unless auth_token.nil?
         {
           id: auth_token.first['sub']
