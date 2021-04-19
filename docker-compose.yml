@@ -1,0 +1,67 @@
+version: '2.4'
+
+x-app: &app
+  build:
+    context: .dockerdev
+    dockerfile: Dockerfile
+    args:
+      RUBY_VERSION: '2.7.0'
+      PG_MAJOR: '13'
+      BUNDLER_VERSION: '2.1.2'
+  environment: &env
+    RACK_ENV: ${RACK_ENV:-development}
+  image: airports_api_dev:1.1.0
+  tmpfs:
+    - /tmp
+
+x-backend: &backend
+  <<: *app
+  stdin_open: true
+  tty: true
+  volumes:
+    - .:/app
+    - bundle:/usr/local/bundle
+    - .dockerdev/.psqlrc:/root/.psqlrc:ro
+    - .dockerdev/.bashrc:/root/.bashrc:ro
+  environment:
+    <<: *env
+    WEB_CONCURRENCY: 1
+    HISTFILE: /app/log/.bash_history
+    PSQL_HISTFILE: /app/log/.psql_history
+    EDITOR: vi
+  depends_on:
+    database:
+      condition: service_healthy
+
+services:
+  runner:
+    <<: *backend
+    command: /bin/bash
+    ports:
+      - '9292:9393'
+
+  api:
+    <<: *backend
+    command: bundle exec shotgun --host 0.0.0.0 --port 3200
+    ports:
+      - 3200:3200
+
+  database:
+    image: postgres:13.0
+    volumes:
+      - .dockerdev/.psqlrc:/root/.psqlrc:ro
+      - postgres:/var/lib/postgresql/data
+      - ./log:/root/log:cached
+    environment:
+      PSQL_HISTFILE: /root/log/.psql_history
+      POSTGRES_USER: etl_user
+      POSTGRES_PASSWORD: hu8jmn3
+      POSTGRES_DB: airports_api
+    ports:
+      - 6432:5432
+    healthcheck:
+      test: pg_isready -U postgres -h 127.0.0.1
+      interval: 5s
+volumes:
+  postgres:
+  bundle:
