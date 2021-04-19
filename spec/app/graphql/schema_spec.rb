@@ -1,11 +1,10 @@
 RSpec.describe Schema do
-
-  describe 'queries' do
+  describe "queries" do
     after(:all) do
       delete_spec_airports
     end
 
-    describe '#airport' do
+    describe "#airport" do
       before(:context) do
         create_spec_airports
       end
@@ -16,7 +15,7 @@ RSpec.describe Schema do
 
       let(:id) { 1 }
       let(:query) do
-       <<-GRAPHQL
+        <<-GRAPHQL
           query($id: ID!){
             airport(id: $id) {
               id
@@ -29,58 +28,58 @@ RSpec.describe Schema do
 
       let(:variables) { { id: id } }
 
-      context 'when unauthorized' do
-        it 'should return an unauthorized-error' do
+      context "when unauthorized" do
+        it "should return an unauthorized-error" do
           result = described_class.execute(query, variables: variables)
 
-          expect(result['data']['airport']).to be_nil
-          expect(result['errors']).to eq([
+          expect(result["data"]["airport"]).to be_nil
+          expect(result["errors"]).to eq([
             {
-              "message"    => "401 Unauthorized",
-              "locations"  => [
+              "message" => "401 Unauthorized",
+              "locations" => [
                 {
-                  "line"   => 2,
-                  "column" => 13
-                }
+                  "line" => 2,
+                  "column" => 13,
+                },
               ],
-              "path"       => [
-                "airport"
+              "path" => [
+                "airport",
               ],
               "extensions" => {
-                "code" => "UNAUTHORIZED"
-              }
-            }
+                "code" => "UNAUTHORIZED",
+              },
+            },
           ])
         end
       end
 
-      context 'when authorized' do
+      context "when authorized" do
         let(:context) { { current_user: { id: 1 } } }
 
-        context 'when id is known' do
-          it 'should return the airport' do
+        context "when id is known" do
+          it "should return the airport" do
             result = described_class.execute(query, variables: variables, context: context)
-            airport_result = result['data']['airport']
+            airport_result = result["data"]["airport"]
             expect(airport_result).to eq({
-              "id"       => "1",
+              "id" => "1",
               "iataCode" => "SZG",
-              "name"     => "Salzburg Airport"
+              "name" => "Salzburg Airport",
             })
           end
         end
 
-        context 'when id is unknown' do
+        context "when id is unknown" do
           let(:id) { 0 }
-          it 'should return no airport' do
+          it "should return no airport" do
             result = described_class.execute(query, variables: variables)
-            airport_result = result['data']['airport']
+            airport_result = result["data"]["airport"]
             expect(airport_result).to eq(nil)
           end
         end
       end
     end
 
-    describe '#search_airports' do
+    describe "#search_airports" do
       before(:context) do
         create_list(:airport, 10)
       end
@@ -111,63 +110,62 @@ RSpec.describe Schema do
         GRAPHQL
       end
 
-      context 'when unauthorized' do
-        it 'should return an unauthorized-error' do
+      context "when unauthorized" do
+        it "should return an unauthorized-error" do
           result = described_class.execute(query, variables: {})
 
-          expect(result['data']).to be_nil
-          expect(result['errors']).to eq([
+          expect(result["data"]).to be_nil
+          expect(result["errors"]).to eq([
             {
-              "message"    => "401 Unauthorized",
-              "locations"  => [
+              "message" => "401 Unauthorized",
+              "locations" => [
                 {
-                  "line"   => 2,
-                  "column" => 13
-                }
+                  "line" => 2,
+                  "column" => 13,
+                },
               ],
-              "path"       => [
-                "searchAirports"
+              "path" => [
+                "searchAirports",
               ],
               "extensions" => {
-                "code" => "UNAUTHORIZED"
-              }
-            }
+                "code" => "UNAUTHORIZED",
+              },
+            },
           ])
         end
       end
 
-      context 'when authorized' do
+      context "when authorized" do
         let(:context) { { current_user: { id: 1 } } }
 
-        context 'when params are valid' do
-          context 'when variables are empty' do
+        context "when params are valid" do
+          context "when variables are empty" do
             let(:variables) { {} }
-            it 'should return the first 3 airports, because GQL_MAX_PAGE_SIZE is set to 3' do
+            it "should return the first 3 airports, because GQL_MAX_PAGE_SIZE is set to 3" do
               result = described_class.execute(query, variables: variables, context: context)
-              expect(result['data']['searchAirports']['totalCount']).to be(10)
-              expect(result['data']['searchAirports']['pageInfo']['hasNextPage']).to be(true)
-              expect(result['data']['searchAirports']['pageInfo']['hasPreviousPage']).to be(false)
-              expect(result['data']['searchAirports']['edges'].length).to be 3
+              expect(result["data"]["searchAirports"]["totalCount"]).to be(10)
+              expect(result["data"]["searchAirports"]["pageInfo"]["hasNextPage"]).to be(true)
+              expect(result["data"]["searchAirports"]["pageInfo"]["hasPreviousPage"]).to be(false)
+              expect(result["data"]["searchAirports"]["edges"].length).to be 3
             end
           end
 
-          describe 'ordering' do
-            context 'when sort_order is not set' do
+          describe "ordering" do
+            context "when sort_order is not set" do
               let(:variables) { { parameters: { orderDefinition: [{ field: "NAME" }] } } }
 
-              it 'should sort ascending by default' do
+              it "should sort ascending by default" do
                 result = described_class.execute(query, variables: variables, context: context)
-                names = result['data']['searchAirports']['edges'].map { |edge| edge['node']['name'] }
+                names = result["data"]["searchAirports"]["edges"].map { |edge| edge["node"]["name"] }
                 sorted_names = names.sort
                 expect(names).to eq(sorted_names)
               end
             end
           end
 
-          describe 'pagination' do
+          describe "pagination" do
             let(:variables) { { first: 15, after: @after } }
-            it 'should return paginated results' do
-
+            it "should return paginated results" do
               hasPreviousPage = []
               hasNextPage = []
               edgeCounts = []
@@ -175,12 +173,12 @@ RSpec.describe Schema do
 
               loop do
                 result = described_class.execute(query, variables: variables.merge(after: @after), context: context)
-                hasPreviousPage << result['data']['searchAirports']['pageInfo']['hasPreviousPage']
-                hasNextPage << result['data']['searchAirports']['pageInfo']['hasNextPage']
-                edgeCounts << result['data']['searchAirports']['edges'].length
-                ids << result['data']['searchAirports']['edges'].map { |edge| edge['node']['id'] }
-                break if !result['data']['searchAirports']['pageInfo']['hasNextPage']
-                @after = result['data']['searchAirports']['pageInfo']['endCursor']
+                hasPreviousPage << result["data"]["searchAirports"]["pageInfo"]["hasPreviousPage"]
+                hasNextPage << result["data"]["searchAirports"]["pageInfo"]["hasNextPage"]
+                edgeCounts << result["data"]["searchAirports"]["edges"].length
+                ids << result["data"]["searchAirports"]["edges"].map { |edge| edge["node"]["id"] }
+                break if !result["data"]["searchAirports"]["pageInfo"]["hasNextPage"]
+                @after = result["data"]["searchAirports"]["pageInfo"]["endCursor"]
               end
 
               expect(hasPreviousPage).to eq([false, true, true, true])
@@ -190,59 +188,59 @@ RSpec.describe Schema do
           end
         end
 
-        context 'when params are invalid' do
-          context 'when there is an invalid variable-name' do
+        context "when params are invalid" do
+          context "when there is an invalid variable-name" do
             let(:variables) { { asdasdsad: 15 } }
-            it 'should skip the invalid variable and return the valid result' do
+            it "should skip the invalid variable and return the valid result" do
               result = described_class.execute(query, variables: variables, context: context)
-              expect(result['data']['searchAirports']['edges'].length).to be 3
+              expect(result["data"]["searchAirports"]["edges"].length).to be 3
             end
           end
 
-          context 'when there is an invalid variable-value' do
+          context "when there is an invalid variable-value" do
             let(:variables) { { first: "invalid" } }
-            it 'should fail with a meaningful error' do
+            it "should fail with a meaningful error" do
               result = described_class.execute(query, variables: variables)
-              expect(result['errors']).to eq([
+              expect(result["errors"]).to eq([
                 {
-                  "message"    => "Variable $first of type Int was provided invalid value",
-                  "locations"  => [
+                  "message" => "Variable $first of type Int was provided invalid value",
+                  "locations" => [
                     {
-                      "line"   => 1,
-                      "column" => 34
-                    }
+                      "line" => 1,
+                      "column" => 34,
+                    },
                   ],
                   "extensions" => {
-                    "value"    => "invalid",
+                    "value" => "invalid",
                     "problems" => [
                       {
-                        "path"        => [],
-                        "explanation" => "Could not coerce value \"invalid\" to Int"
-                      }
-                    ]
-                  }
-                }
+                        "path" => [],
+                        "explanation" => "Could not coerce value \"invalid\" to Int",
+                      },
+                    ],
+                  },
+                },
               ])
             end
           end
 
-          context 'when results should be sorted by DISTANCE_TO_GEO_POSITION, but geo position is not defined' do
+          context "when results should be sorted by DISTANCE_TO_GEO_POSITION, but geo position is not defined" do
             let(:variables) { { parameters: { orderDefinition: [{ field: "DISTANCE_TO_GEO_POSITION" }] } } }
-            it 'should fail with a meaningful error' do
+            it "should fail with a meaningful error" do
               result = described_class.execute(query, variables: variables, context: context)
-              expect(result['errors']).to eq([
+              expect(result["errors"]).to eq([
                 {
-                  "message"   => "AirportOrderField DISTANCE_TO_GEO_POSITION is useless unless geo_position is defined",
+                  "message" => "AirportOrderField DISTANCE_TO_GEO_POSITION is useless unless geo_position is defined",
                   "locations" => [
                     {
-                      "line"   => 2,
-                      "column" => 13
-                    }
+                      "line" => 2,
+                      "column" => 13,
+                    },
                   ],
-                  "path"      => [
-                    "searchAirports"
-                  ]
-                }
+                  "path" => [
+                    "searchAirports",
+                  ],
+                },
               ])
             end
           end
@@ -251,8 +249,8 @@ RSpec.describe Schema do
     end
   end
 
-  describe 'mutations' do
-    describe '#create_user' do
+  describe "mutations" do
+    describe "#create_user" do
       let(:mutation) do
         <<-GRAPHQL
           mutation ($credentials: AuthCredentials!) {
@@ -264,279 +262,278 @@ RSpec.describe Schema do
         GRAPHQL
       end
 
-      context 'when unauthorized' do
-        let(:variables) { { credentials: { email: 'pacey.whitter@dawsonscreak.com', password: 'password' } } }
+      context "when unauthorized" do
+        let(:variables) { { credentials: { email: "pacey.whitter@dawsonscreak.com", password: "password" } } }
 
-        it 'should return an unauthorized-error' do
+        it "should return an unauthorized-error" do
           result = described_class.execute(mutation, variables: variables)
 
-          expect(result['data']).to be_nil
-          expect(result['errors']).to eq([
+          expect(result["data"]).to be_nil
+          expect(result["errors"]).to eq([
             {
-              "message"    => "401 Unauthorized",
-              "locations"  => [
+              "message" => "401 Unauthorized",
+              "locations" => [
                 {
-                  "line"   => 2,
-                  "column" => 13
-                }
+                  "line" => 2,
+                  "column" => 13,
+                },
               ],
-              "path"       => [
-                "createUser"
+              "path" => [
+                "createUser",
               ],
               "extensions" => {
-                "code" => "UNAUTHORIZED"
-              }
-            }
+                "code" => "UNAUTHORIZED",
+              },
+            },
           ])
         end
       end
 
-      context 'when authorized' do
+      context "when authorized" do
         let(:context) { { current_user: { id: 1 } } }
 
-        context 'when params are valid' do
-          let(:variables) { { credentials: { email: 'pacey.whitter@dawsonscreak.com', password: 'password' } } }
-          it 'should create a user' do
+        context "when params are valid" do
+          let(:variables) { { credentials: { email: "pacey.whitter@dawsonscreak.com", password: "password" } } }
+          it "should create a user" do
             result = described_class.execute(mutation, variables: variables, context: context)
-            expect(result['data']['createUser']['email']).to eq('pacey.whitter@dawsonscreak.com')
+            expect(result["data"]["createUser"]["email"]).to eq("pacey.whitter@dawsonscreak.com")
           end
 
-          context 'but email is taken' do
+          context "but email is taken" do
             before(:each) do
-              create(:user, { email: 'pacey.whitter@dawsonscreak.com' })
+              create(:user, { email: "pacey.whitter@dawsonscreak.com" })
             end
 
-            it 'should fail with a specific error' do
+            it "should fail with a specific error" do
               result = described_class.execute(mutation, variables: variables, context: context)
 
-              expect(result['errors']).to eq([
+              expect(result["errors"]).to eq([
                 {
-                  "message"   => "email has already been taken",
+                  "message" => "email has already been taken",
                   "locations" => [
                     {
-                      "line"   => 2,
-                      "column" => 13
-                    }
+                      "line" => 2,
+                      "column" => 13,
+                    },
                   ],
-                  "path"      => [
-                    "createUser"
-                  ]
-                }
+                  "path" => [
+                    "createUser",
+                  ],
+                },
               ])
             end
           end
         end
 
-        context 'when params are invalid' do
-          context 'when params are nil' do
+        context "when params are invalid" do
+          context "when params are nil" do
             let(:variables) { nil }
 
-            it 'should fail with errors' do
+            it "should fail with errors" do
               result = described_class.execute(mutation, variables: variables, context: context)
 
-              expect(result['errors']).to eq([
+              expect(result["errors"]).to eq([
                 {
-                  "message"    => "Variable $credentials of type AuthCredentials! was provided invalid value",
-                  "locations"  => [
+                  "message" => "Variable $credentials of type AuthCredentials! was provided invalid value",
+                  "locations" => [
                     {
-                      "line"   => 1,
-                      "column" => 21
-                    }
+                      "line" => 1,
+                      "column" => 21,
+                    },
                   ],
                   "extensions" => {
-                    "value"    => nil,
+                    "value" => nil,
                     "problems" => [
                       {
-                        "path"        => [],
-                        "explanation" => "Expected value to not be null"
-                      }
-                    ]
-                  }
-                }
+                        "path" => [],
+                        "explanation" => "Expected value to not be null",
+                      },
+                    ],
+                  },
+                },
               ])
             end
           end
 
-          context 'when params are empty' do
+          context "when params are empty" do
             let(:variables) { {} }
 
-            it 'should fail with errors' do
+            it "should fail with errors" do
               result = described_class.execute(mutation, variables: variables, context: context)
 
-              expect(result['errors']).to eq([
+              expect(result["errors"]).to eq([
                 {
-                  "message"    => "Variable $credentials of type AuthCredentials! was provided invalid value",
-                  "locations"  => [
+                  "message" => "Variable $credentials of type AuthCredentials! was provided invalid value",
+                  "locations" => [
                     {
-                      "line"   => 1,
-                      "column" => 21
-                    }
+                      "line" => 1,
+                      "column" => 21,
+                    },
                   ],
                   "extensions" => {
-                    "value"    => nil,
+                    "value" => nil,
                     "problems" => [
                       {
-                        "path"        => [],
-                        "explanation" => "Expected value to not be null"
-                      }
-                    ]
-                  }
-                }
+                        "path" => [],
+                        "explanation" => "Expected value to not be null",
+                      },
+                    ],
+                  },
+                },
               ])
             end
           end
 
-          context 'when credentials are nil' do
+          context "when credentials are nil" do
             let(:variables) { { credentials: nil } }
 
-            it 'should fail with errors' do
+            it "should fail with errors" do
               result = described_class.execute(mutation, variables: variables, context: context)
 
-              expect(result['errors']).to eq([
+              expect(result["errors"]).to eq([
                 {
-                  "message"    => "Variable $credentials of type AuthCredentials! was provided invalid value",
-                  "locations"  => [
+                  "message" => "Variable $credentials of type AuthCredentials! was provided invalid value",
+                  "locations" => [
                     {
-                      "line"   => 1,
-                      "column" => 21
-                    }
+                      "line" => 1,
+                      "column" => 21,
+                    },
                   ],
                   "extensions" => {
-                    "value"    => nil,
+                    "value" => nil,
                     "problems" => [
                       {
-                        "path"        => [],
-                        "explanation" => "Expected value to not be null"
-                      }
-                    ]
-                  }
-                }
+                        "path" => [],
+                        "explanation" => "Expected value to not be null",
+                      },
+                    ],
+                  },
+                },
               ])
             end
           end
 
-          context 'when credentials are empty' do
+          context "when credentials are empty" do
             let(:variables) { { credentials: {} } }
 
-            it 'should fail with errors' do
+            it "should fail with errors" do
               result = described_class.execute(mutation, variables: variables, context: context)
 
-              expect(result['errors']).to eq([
+              expect(result["errors"]).to eq([
                 {
-                  "message"    => "Variable $credentials of type AuthCredentials! was provided invalid value for email (Expected value to not be null), password (Expected value to not be null)",
-                  "locations"  => [
+                  "message" => "Variable $credentials of type AuthCredentials! was provided invalid value for email (Expected value to not be null), password (Expected value to not be null)",
+                  "locations" => [
                     {
-                      "line"   => 1,
-                      "column" => 21
-                    }
+                      "line" => 1,
+                      "column" => 21,
+                    },
                   ],
                   "extensions" => {
-                    "value"    => {},
+                    "value" => {},
                     "problems" => [
                       {
-                        "path"        => [
-                          "email"
+                        "path" => [
+                          "email",
                         ],
-                        "explanation" => "Expected value to not be null"
+                        "explanation" => "Expected value to not be null",
                       },
                       {
-                        "path"        => [
-                          "password"
+                        "path" => [
+                          "password",
                         ],
-                        "explanation" => "Expected value to not be null"
-                      }
-                    ]
-                  }
-                }
+                        "explanation" => "Expected value to not be null",
+                      },
+                    ],
+                  },
+                },
               ])
             end
           end
 
-          context 'when email is invalid' do
-            let(:variables) { { credentials: { email: 'invalid', password: 'abc123' } } }
+          context "when email is invalid" do
+            let(:variables) { { credentials: { email: "invalid", password: "abc123" } } }
 
-            it 'should fail with errors' do
+            it "should fail with errors" do
               result = described_class.execute(mutation, variables: variables, context: context)
 
-              expect(result['errors']).to eq([
+              expect(result["errors"]).to eq([
                 {
-                  "message"   => "email is invalid",
+                  "message" => "email is invalid",
                   "locations" => [
                     {
-                      "line"   => 2,
-                      "column" => 13
-                    }
+                      "line" => 2,
+                      "column" => 13,
+                    },
                   ],
-                  "path"      => [
-                    "createUser"
-                  ]
-                }
+                  "path" => [
+                    "createUser",
+                  ],
+                },
               ])
             end
           end
 
-          context 'when password is invalid' do
-            let(:variables) { { credentials: { email: 'email@test.com', password: '' } } }
+          context "when password is invalid" do
+            let(:variables) { { credentials: { email: "email@test.com", password: "" } } }
 
-            it 'should fail with errors' do
+            it "should fail with errors" do
               result = described_class.execute(mutation, variables: variables, context: context)
 
-              expect(result['errors']).to eq([
+              expect(result["errors"]).to eq([
                 {
-                  "message"   => "password must be filled",
+                  "message" => "password must be filled",
                   "locations" => [
                     {
-                      "line"   => 2,
-                      "column" => 13
-                    }
+                      "line" => 2,
+                      "column" => 13,
+                    },
                   ],
-                  "path"      => [
-                    "createUser"
-                  ]
-                }
+                  "path" => [
+                    "createUser",
+                  ],
+                },
               ])
             end
           end
 
-          context 'when password has wrong data type' do
-            let(:variables) { { credentials: { email: 'email@test.com', password: 45454 } } }
+          context "when password has wrong data type" do
+            let(:variables) { { credentials: { email: "email@test.com", password: 45454 } } }
 
-            it 'should fail with errors' do
+            it "should fail with errors" do
               result = described_class.execute(mutation, variables: variables, context: context)
 
-              expect(result['errors']).to eq([
+              expect(result["errors"]).to eq([
                 {
-                  "message"    => "Variable $credentials of type AuthCredentials! was provided invalid value for password (Could not coerce value 45454 to String)",
-                  "locations"  => [
+                  "message" => "Variable $credentials of type AuthCredentials! was provided invalid value for password (Could not coerce value 45454 to String)",
+                  "locations" => [
                     {
-                      "line"   => 1,
-                      "column" => 21
-                    }
+                      "line" => 1,
+                      "column" => 21,
+                    },
                   ],
                   "extensions" => {
-                    "value"    => {
-                      "email"    => "email@test.com",
-                      "password" => 45454
+                    "value" => {
+                      "email" => "email@test.com",
+                      "password" => 45454,
                     },
                     "problems" => [
                       {
-                        "path"        => [
-                          "password"
+                        "path" => [
+                          "password",
                         ],
-                        "explanation" => "Could not coerce value 45454 to String"
-                      }
-                    ]
-                  }
-                }
+                        "explanation" => "Could not coerce value 45454 to String",
+                      },
+                    ],
+                  },
+                },
               ])
             end
           end
         end
       end
-
     end
 
-    describe '#sign_in' do
+    describe "#sign_in" do
       let(:mutation) do
         <<-GRAPHQL
           mutation ($credentials: AuthCredentials!) {
@@ -551,282 +548,278 @@ RSpec.describe Schema do
         GRAPHQL
       end
 
-      context 'when params are valid' do
-        let(:email) { 'pacey.whitter@dawsonscreak.com' }
-        let(:password) { 'my password' }
+      context "when params are valid" do
+        let(:email) { "pacey.whitter@dawsonscreak.com" }
+        let(:password) { "my password" }
         let(:variables) { { credentials: { email: email, password: password } } }
 
-        context 'when user with given email exists' do
+        context "when user with given email exists" do
           before(:each) do
-            create(:user, { email: 'pacey.whitter@dawsonscreak.com' })
+            create(:user, { email: "pacey.whitter@dawsonscreak.com" })
           end
 
-          context('when password matches') do
-            it 'should sign in a user' do
+          context("when password matches") do
+            it "should sign in a user" do
               result = described_class.execute(mutation, variables: variables)
 
-              expect(result['data']['signIn']['user']['email']).to eq('pacey.whitter@dawsonscreak.com')
-              expect(result['data']['signIn']['token'].length).to be(127)
+              expect(result["data"]["signIn"]["user"]["email"]).to eq("pacey.whitter@dawsonscreak.com")
+              expect(result["data"]["signIn"]["token"].length).to be > 100
             end
           end
 
-          context 'when password does not match' do
-            let(:password) { 'not my password' }
+          context "when password does not match" do
+            let(:password) { "not my password" }
 
-            it 'should fail with an error' do
+            it "should fail with an error" do
               result = described_class.execute(mutation, variables: variables)
 
-              expect(result['errors']).to eq([
+              expect(result["errors"]).to eq([
                 {
-                  "message"   => "authentication failed",
+                  "message" => "authentication failed",
                   "locations" => [
                     {
-                      "line"   => 2,
-                      "column" => 13
-                    }
+                      "line" => 2,
+                      "column" => 13,
+                    },
                   ],
-                  "path"      => [
-                    "signIn"
-                  ]
-                }
+                  "path" => [
+                    "signIn",
+                  ],
+                },
               ])
             end
           end
         end
 
-        context 'when there is no user with given email' do
-          let(:email) { 'joey.potter@dawsonscreak.com' }
+        context "when there is no user with given email" do
+          let(:email) { "joey.potter@dawsonscreak.com" }
 
-          it 'should fail with an error' do
+          it "should fail with an error" do
             result = described_class.execute(mutation, variables: variables)
 
-            expect(result['errors']).to eq([
+            expect(result["errors"]).to eq([
               {
-                "message"   => "no user found for given email",
+                "message" => "no user found for given email",
                 "locations" => [
                   {
-                    "line"   => 2,
-                    "column" => 13
-                  }
+                    "line" => 2,
+                    "column" => 13,
+                  },
                 ],
-                "path"      => [
-                  "signIn"
-                ]
-              }
+                "path" => [
+                  "signIn",
+                ],
+              },
             ])
           end
         end
       end
 
-      context 'when params are invalid' do
-        context 'when params are nil' do
+      context "when params are invalid" do
+        context "when params are nil" do
           let(:variables) { nil }
 
-          it 'should fail with errors' do
+          it "should fail with errors" do
             result = described_class.execute(mutation, variables: variables)
 
-            expect(result['errors']).to eq([
+            expect(result["errors"]).to eq([
               {
-                "message"    => "Variable $credentials of type AuthCredentials! was provided invalid value",
-                "locations"  => [
+                "message" => "Variable $credentials of type AuthCredentials! was provided invalid value",
+                "locations" => [
                   {
-                    "line"   => 1,
-                    "column" => 21
-                  }
+                    "line" => 1,
+                    "column" => 21,
+                  },
                 ],
                 "extensions" => {
-                  "value"    => nil,
+                  "value" => nil,
                   "problems" => [
                     {
-                      "path"        => [],
-                      "explanation" => "Expected value to not be null"
-                    }
-                  ]
-                }
-              }
+                      "path" => [],
+                      "explanation" => "Expected value to not be null",
+                    },
+                  ],
+                },
+              },
             ])
           end
         end
 
-        context 'when params are empty' do
+        context "when params are empty" do
           let(:variables) { {} }
 
-          it 'should fail with errors' do
+          it "should fail with errors" do
             result = described_class.execute(mutation, variables: variables)
 
-            expect(result['errors']).to eq([
+            expect(result["errors"]).to eq([
               {
-                "message"    => "Variable $credentials of type AuthCredentials! was provided invalid value",
-                "locations"  => [
+                "message" => "Variable $credentials of type AuthCredentials! was provided invalid value",
+                "locations" => [
                   {
-                    "line"   => 1,
-                    "column" => 21
-                  }
+                    "line" => 1,
+                    "column" => 21,
+                  },
                 ],
                 "extensions" => {
-                  "value"    => nil,
+                  "value" => nil,
                   "problems" => [
                     {
-                      "path"        => [],
-                      "explanation" => "Expected value to not be null"
-                    }
-                  ]
-                }
-              }
+                      "path" => [],
+                      "explanation" => "Expected value to not be null",
+                    },
+                  ],
+                },
+              },
             ])
           end
         end
 
-        context 'when credentials are nil' do
+        context "when credentials are nil" do
           let(:variables) { { credentials: nil } }
 
-          it 'should fail with errors' do
+          it "should fail with errors" do
             result = described_class.execute(mutation, variables: variables)
 
-            expect(result['errors']).to eq([
+            expect(result["errors"]).to eq([
               {
-                "message"    => "Variable $credentials of type AuthCredentials! was provided invalid value",
-                "locations"  => [
+                "message" => "Variable $credentials of type AuthCredentials! was provided invalid value",
+                "locations" => [
                   {
-                    "line"   => 1,
-                    "column" => 21
-                  }
+                    "line" => 1,
+                    "column" => 21,
+                  },
                 ],
                 "extensions" => {
-                  "value"    => nil,
+                  "value" => nil,
                   "problems" => [
                     {
-                      "path"        => [],
-                      "explanation" => "Expected value to not be null"
-                    }
-                  ]
-                }
-              }
+                      "path" => [],
+                      "explanation" => "Expected value to not be null",
+                    },
+                  ],
+                },
+              },
             ])
           end
         end
 
-        context 'when credentials are empty' do
+        context "when credentials are empty" do
           let(:variables) { { credentials: {} } }
 
-          it 'should fail with errors' do
+          it "should fail with errors" do
             result = described_class.execute(mutation, variables: variables)
 
-            expect(result['errors']).to eq([
+            expect(result["errors"]).to eq([
               {
-                "message"    => "Variable $credentials of type AuthCredentials! was provided invalid value for email (Expected value to not be null), password (Expected value to not be null)",
-                "locations"  => [
+                "message" => "Variable $credentials of type AuthCredentials! was provided invalid value for email (Expected value to not be null), password (Expected value to not be null)",
+                "locations" => [
                   {
-                    "line"   => 1,
-                    "column" => 21
-                  }
+                    "line" => 1,
+                    "column" => 21,
+                  },
                 ],
                 "extensions" => {
-                  "value"    => {},
+                  "value" => {},
                   "problems" => [
                     {
-                      "path"        => [
-                        "email"
+                      "path" => [
+                        "email",
                       ],
-                      "explanation" => "Expected value to not be null"
+                      "explanation" => "Expected value to not be null",
                     },
                     {
-                      "path"        => [
-                        "password"
+                      "path" => [
+                        "password",
                       ],
-                      "explanation" => "Expected value to not be null"
-                    }
-                  ]
-                }
-              }
+                      "explanation" => "Expected value to not be null",
+                    },
+                  ],
+                },
+              },
             ])
           end
         end
 
-        context 'when email is invalid' do
-          let(:variables) { { credentials: { email: 'invalid', password: 'abc123' } } }
+        context "when email is invalid" do
+          let(:variables) { { credentials: { email: "invalid", password: "abc123" } } }
 
-          it 'should fail with errors' do
+          it "should fail with errors" do
             result = described_class.execute(mutation, variables: variables)
 
-            expect(result['errors']).to eq([
+            expect(result["errors"]).to eq([
               {
-                "message"   => "email is invalid",
+                "message" => "email is invalid",
                 "locations" => [
                   {
-                    "line"   => 2,
-                    "column" => 13
-                  }
+                    "line" => 2,
+                    "column" => 13,
+                  },
                 ],
-                "path"      => [
-                  "signIn"
-                ]
-              }
+                "path" => [
+                  "signIn",
+                ],
+              },
             ])
           end
         end
 
-        context 'when password is invalid' do
-          let(:variables) { { credentials: { email: 'email@test.com', password: '' } } }
+        context "when password is invalid" do
+          let(:variables) { { credentials: { email: "email@test.com", password: "" } } }
 
-          it 'should fail with errors' do
+          it "should fail with errors" do
             result = described_class.execute(mutation, variables: variables)
 
-            expect(result['errors']).to eq([
+            expect(result["errors"]).to eq([
               {
-                "message"   => "password must be filled",
+                "message" => "password must be filled",
                 "locations" => [
                   {
-                    "line"   => 2,
-                    "column" => 13
-                  }
+                    "line" => 2,
+                    "column" => 13,
+                  },
                 ],
-                "path"      => [
-                  "signIn"
-                ]
-              }
+                "path" => [
+                  "signIn",
+                ],
+              },
             ])
           end
         end
 
-        context 'when password has wrong data type' do
-          let(:variables) { { credentials: { email: 'email@test.com', password: 45454 } } }
+        context "when password has wrong data type" do
+          let(:variables) { { credentials: { email: "email@test.com", password: 45454 } } }
 
-          it 'should fail with errors' do
+          it "should fail with errors" do
             result = described_class.execute(mutation, variables: variables)
 
-            expect(result['errors']).to eq([
+            expect(result["errors"]).to eq([
               {
-                "message"    => "Variable $credentials of type AuthCredentials! was provided invalid value for password (Could not coerce value 45454 to String)",
-                "locations"  => [
+                "message" => "Variable $credentials of type AuthCredentials! was provided invalid value for password (Could not coerce value 45454 to String)",
+                "locations" => [
                   {
-                    "line"   => 1,
-                    "column" => 21
-                  }
+                    "line" => 1,
+                    "column" => 21,
+                  },
                 ],
                 "extensions" => {
-                  "value"    => {
-                    "email"    => "email@test.com",
-                    "password" => 45454
+                  "value" => {
+                    "email" => "email@test.com",
+                    "password" => 45454,
                   },
                   "problems" => [
                     {
-                      "path"        => [
-                        "password"
+                      "path" => [
+                        "password",
                       ],
-                      "explanation" => "Could not coerce value 45454 to String"
-                    }
-                  ]
-                }
-              }
+                      "explanation" => "Could not coerce value 45454 to String",
+                    },
+                  ],
+                },
+              },
             ])
           end
         end
-
       end
-
     end
-
   end
-
 end

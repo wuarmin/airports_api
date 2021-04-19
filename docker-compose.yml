@@ -29,9 +29,6 @@ x-backend: &backend
     HISTFILE: /app/log/.bash_history
     PSQL_HISTFILE: /app/log/.psql_history
     EDITOR: vi
-  depends_on:
-    database:
-      condition: service_healthy
 
 services:
   runner:
@@ -39,12 +36,28 @@ services:
     command: /bin/bash
     ports:
       - '9292:9393'
+    depends_on:
+      database:
+        condition: service_healthy
+
+  test_runner: 
+    <<: *backend
+    command: /bin/bash
+    environment:
+      <<: *env
+      RACK_ENV: test
+    depends_on:
+      test_database:
+        condition: service_healthy
 
   api:
     <<: *backend
     command: bundle exec shotgun --host 0.0.0.0 --port 3200
     ports:
       - 3200:3200
+    depends_on:
+      database:
+        condition: service_healthy
 
   database:
     image: postgres:13.0
@@ -62,6 +75,21 @@ services:
     healthcheck:
       test: pg_isready -U postgres -h 127.0.0.1
       interval: 5s
+
+  test_database:
+    image: postgres:13.0
+    volumes:
+      - postgres_airports_api_test:/var/lib/postgresql/data
+    environment:
+      POSTGRES_USER: etl_user
+      POSTGRES_PASSWORD: hu8jmn3
+      POSTGRES_DB: airports_api_playground
+    ports:
+      - 7432:5432
+    healthcheck:
+      test: pg_isready -U postgres -h 127.0.0.1
+      interval: 5s
 volumes:
   postgres:
+  postgres_airports_api_test:
   bundle:
