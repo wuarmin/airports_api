@@ -3,6 +3,7 @@
 ### Development
 Run the following commands to prepare your Airports API Development Environment:
 ```sh
+$ docker volume create airports_api_db_vol
 $ docker-compose build
 $ docker-compose run runner ./bin/setup
 ```

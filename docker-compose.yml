@@ -63,7 +63,7 @@ services:
     image: postgres:13.0
     volumes:
       - .dockerdev/.psqlrc:/root/.psqlrc:ro
-      - postgres:/var/lib/postgresql/data
+      - airports_api_db_vol:/var/lib/postgresql/data
       - ./log:/root/log:cached
     environment:
       PSQL_HISTFILE: /root/log/.psql_history
@@ -90,6 +90,7 @@ services:
       test: pg_isready -U postgres -h 127.0.0.1
       interval: 5s
 volumes:
-  postgres:
+  airports_api_db_vol:
+    external: true
   postgres_airports_api_test:
   bundle:
