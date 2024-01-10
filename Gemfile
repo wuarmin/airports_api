@@ -8,7 +8,7 @@ gem 'sequel', '~> 5.32.0'
 gem 'sequel-seed', '~> 1.1.2'
 gem 'dotenv', '~> 2.7.5'
 gem 'rake', '~> 13.0.1'
-gem 'puma', '~> 5.6.7'
+gem 'puma', '~> 5.6.8'
 gem "hanami-validations", "~> 2.0.alpha"
 gem "dry-monads", "~> 1.3.5"
 gem "bcrypt", "~> 3.1.13"
